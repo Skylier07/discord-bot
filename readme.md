@@ -5,10 +5,6 @@
        src="https://img.shields.io/github/last-commit/Skylier07/discord-bot/main">
 </a>
 
-<a href="https://github.com/Skylier07/discord-bot/blob/main/LICENSE">
-  <img alt="GitHub License"
-       src="https://img.shields.io/github/license/Skylier07/discord-bot">
-</a>
 
 A comprehensive Discord bot for managing Hypixel SkyBlock guild operations, carrier applications, and user verification for the Delerious community.
 
