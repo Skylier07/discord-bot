@@ -1,13 +1,13 @@
 # Delerious Discord Bot
 
-<a href="https://github.com/Skylier07/skyblock-bot">
+<a href="https://github.com/Skylier07/discord-bot">
   <img alt="GitHub last commit (branch)"
-       src="https://img.shields.io/github/last-commit/Skylier07/skyblock-bot/main">
+       src="https://img.shields.io/github/last-commit/Skylier07/discord-bot/main">
 </a>
 
-<a href="https://github.com/Skylier07/skyblock-bot/blob/main/LICENSE.md">
+<a href="https://github.com/Skylier07/discord-bot/blob/main/LICENSE.md">
   <img alt="GitHub License"
-       src="https://img.shields.io/github/license/Skylier07/skyblock-bot">
+       src="https://img.shields.io/github/license/Skylier07/discord-bot">
 </a>
 
 A comprehensive Discord bot for managing Hypixel SkyBlock guild operations, carrier applications, and user verification for the Delerious community.
@@ -192,7 +192,7 @@ This is a private project for the Delerious community. For issues or suggestions
 
 ## 📞 Support
 
-For support, open a ticket in the Delerious Discord server or contact the bot administrators.
+For support, open a ticket in the Delerious Discord server or contact me through Discord `a.weeb`
 
 ---
 
