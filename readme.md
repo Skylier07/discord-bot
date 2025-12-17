@@ -30,7 +30,7 @@ A comprehensive Discord bot for managing Hypixel SkyBlock guild operations, carr
 1. **Clone the repository**
 
    ```bash
-   git clone https://github.com/Skylier07/skyblock-bot.git
+   git clone https://github.com/Skylier07/discord-bot.git
    cd delerious-bot
    ```
 
