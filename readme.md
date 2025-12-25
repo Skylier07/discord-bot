@@ -5,7 +5,6 @@
        src="https://img.shields.io/github/last-commit/Skylier07/discord-bot/main">
 </a>
 
-
 A comprehensive Discord bot for managing Hypixel SkyBlock guild operations, carrier applications, and user verification for the Delerious community.
 
 ## 🎯 Features
@@ -31,7 +30,6 @@ A comprehensive Discord bot for managing Hypixel SkyBlock guild operations, carr
 
    ```bash
    git clone https://github.com/Skylier07/discord-bot.git
-   cd delerious-bot
    ```
 
 2. **Install dependencies**
