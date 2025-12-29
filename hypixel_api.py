@@ -3,8 +3,7 @@ import json
 from verification import *
 from keys import API_KEY
 api_url = "https://api.hypixel.net/v2/resources/skyblock/"
-floorReqs = [19, 21, 24, 27, 30, 35] # Need to change into xp
-floorReqs = [97640, 188140, 488640, 1239640, 3084640, 13259640]
+floorReqs = [24, 24, 24, 28, 30, 38] # Need to change into xp
 
 def get_player_profiles(player_name=None, uuid=None):
     url = f"https://api.hypixel.net/v2/skyblock/profiles?key={API_KEY}"
@@ -83,15 +82,15 @@ def humanize_xp(xp: int) -> str:
 
 def check_reqs_dungeon(player_name, floor: int):
 
-    xp = get_cata_xp(player_name)
-    if floor >=1 and floor <=6:
-        if xp >= floorReqs[floor-1]:
+    level = get_level(player_name)
+    if floor >=1 and floor <=3:
+        if level >= floorReqs[floor-1]:
             
-            return True, humanize_xp(xp)
+            return True, level
         else:
-            return False, humanize_xp(xp)
+            return False, level
     else:
-        return False, humanize_xp(xp)
+        return False, level
 
 def get_skyblock_level(player_name):
     uuid = get_uuid(player_name)
@@ -126,6 +125,48 @@ def get_guild_members(guild_name):
         print("Timeout Error:", errt)
     except requests.exceptions.RequestException as err:
         print("Oops: Something went wrong", err)
+
+CATACOMBS_XP = {
+    15: 25340,
+    16: 35640,
+    17: 50040,
+    18: 70040,
+    19: 97640,
+    20: 135640,
+    21: 188140,
+    22: 259640,
+    23: 356640,
+    24: 488640,
+    25: 668640,
+    26: 911640,
+    27: 1239640,
+    28: 1684640,
+    29: 2284640,
+    30: 3084640,
+    31: 4149640,
+    32: 5559640,
+    33: 7459640,
+    34: 9959640,
+    35: 13259640,
+    36: 17559640,
+    37: 23159640,
+    38: 30359640,
+    39: 39559640,
+    40: 51559640,
+}
+
+
+def get_level(player_name):
+    xp = get_cata_xp(player_name)
+
+    level = 0
+    for lvl, required_xp in sorted(CATACOMBS_XP.items()):
+        if xp >= required_xp:
+            level = lvl
+        else:
+            break
+    return level
+
 
 if __name__ == "__main__":
     print(len(get_guild_members('Spruce')))

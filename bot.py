@@ -9,7 +9,7 @@ from discord.ui import View
 from pymongo import MongoClient
 from discord.utils import get
 from verification import get_user_discord, get_uuid, get_uuid_with_discord, get_discord_with_uuid
-from hypixel_api import check_reqs_slayer, check_reqs_dungeon, get_skyblock_level, get_guild_members
+from hypixel_api import check_reqs_slayer, check_reqs_dungeon, get_skyblock_level, get_guild_members, get_level
 from scammer import check_scammer_id
 from keys import MONGO_URI, BOT_TOKEN
 
@@ -101,6 +101,73 @@ class ReviewView(View):
         await self.embed_user.add_roles(role) 
         await interaction.response.send_message(f"{self.embed_user.mention}'s application rejected and blacklisted by {interaction.user.mention}", ephemeral=False)
 
+class ReviewView_M(View):
+    def __init__(self, embed_user:discord.user, floor:int):
+        super().__init__(timeout=None)
+        self.embed_user = embed_user
+        self.floor=floor
+
+    @discord.ui.button(label="Accept", style=discord.ButtonStyle.success, custom_id="acceptBtn")
+    async def approve(self, interaction: discord.Interaction, button: discord.ui.Button):
+        embed = interaction.message.embeds[0]  
+        embed.color = discord.Color.green() 
+
+        role = get(self.embed_user.guild.roles, name=f"M{self.floor} Carrier")
+        user = self.embed_user
+        user_roles = [role.name for role in user.roles]
+
+        if not any(role=="Carry Team" for role in user_roles):
+            carry_team = get(interaction.guild.roles, name=f"Carry Team")
+            await user.add_roles(carry_team) 
+        try: 
+            dm_embed = discord.Embed(title=f"Your Mastermode floor {self.floor} application has been accepted", description="Thank you for joining our carrier program. You will be pinged when a carry service that you provide is requested!")
+            dm_embed.add_field(name="Rules", value="<#990437238926110730>")
+            dm_embed.add_field(name="Accepted By", value=f"{interaction.user.mention}", inline=False)
+
+            dm_embed.set_author(name=interaction.user.name, icon_url=interaction.user.display_avatar.url)
+            dm_embed.timestamp = interaction.created_at
+            dm_embed.color=discord.Color.green() 
+            await user.send(embed=dm_embed)
+            await interaction.message.edit(embed=embed)
+            await self.embed_user.add_roles(role) 
+            await interaction.response.send_message(f"{self.embed_user.mention}'s application accepted by {interaction.user.mention}", ephemeral=False)
+        except Exception:
+            carrier_chat=interaction.guild.get_channel(990438688561463297) 
+            await interaction.message.edit(embed=embed)
+            await self.embed_user.add_roles(role) 
+            await interaction.response.send_message(f"{self.embed_user.mention}'s application accepted by {interaction.user.mention}", ephemeral=False)
+            await carrier_chat.send(embed=dm_embed)
+
+            pass
+
+
+    @discord.ui.button(label="Reject", style=discord.ButtonStyle.danger, custom_id="rejectBtn")
+    async def reject(self, interaction: discord.Interaction, button: discord.ui.Button):
+        embed = interaction.message.embeds[0]  
+        embed.color = discord.Color.red() 
+        user = self.embed_user
+        try:
+            await user.send(f"Your Mastermode floor {self.floor} application has been declined. If you have any questions regarding this decision, feel free to make a support ticket.")
+        except Exception as e:
+            pass
+        await interaction.message.edit(embed=embed) 
+        await interaction.response.send_message(f"{self.embed_user.mention}'s application rejected by {interaction.user.mention}", ephemeral=False)
+    @discord.ui.button(label="Blacklist", style=discord.ButtonStyle.gray, custom_id="blacklistBtn")
+    async def blacklist(self, interaction: discord.Interaction, button: discord.ui.Button):
+        embed = interaction.message.embeds[0]  
+        embed.color = discord.Color.red() 
+        embed.title = f"Rejected and blacklisted {self.embed_user.display_name}"
+        user = self.embed_user
+        role = get(self.embed_user.guild.roles, name="Application Blacklisted")
+        user = self.embed_user
+        try:
+            await user.send(f"Your Mastermode floor {self.floor} application has been rejected and you're now application blacklisted. If you have any questions regarding this decision, feel free to make a support ticket.")
+        except Exception as e:
+            pass
+        await interaction.message.edit(embed=embed) 
+        await self.embed_user.add_roles(role) 
+        await interaction.response.send_message(f"{self.embed_user.mention}'s application rejected and blacklisted by {interaction.user.mention}", ephemeral=False)
+
 
 
 class GuildView(View):
@@ -181,15 +248,15 @@ class MyView(discord.ui.View):
     @discord.ui.button(label="F3", style=discord.ButtonStyle.primary, custom_id="f3")
     async def f3_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         await apply_dungeon(interaction, 3)
-    @discord.ui.button(label="F4", style=discord.ButtonStyle.primary, custom_id="f4")
-    async def f4_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await apply_dungeon(interaction, 4)
-    @discord.ui.button(label="F5", style=discord.ButtonStyle.primary, custom_id="f5")
-    async def f5_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await apply_dungeon(interaction, 5)
-    @discord.ui.button(label="F6", style=discord.ButtonStyle.primary, custom_id="f6")
-    async def f6_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await apply_dungeon(interaction, 6)
+    # @discord.ui.button(label="F4", style=discord.ButtonStyle.primary, custom_id="f4")
+    # async def f4_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+    #     await apply_dungeon(interaction, 4)
+    # @discord.ui.button(label="F5", style=discord.ButtonStyle.primary, custom_id="f5")
+    # async def f5_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+    #     await apply_dungeon(interaction, 5)
+    # @discord.ui.button(label="F6", style=discord.ButtonStyle.primary, custom_id="f6")
+    # async def f6_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+    #     await apply_dungeon(interaction, 6)
 
 class MyView(discord.ui.View):
     def __init__(self):
@@ -209,6 +276,7 @@ class MyView(discord.ui.View):
 async def on_ready():
     await client.tree.sync(guild=discord.Object(id=732620946300600331))
     print(f'Logged in as {client.user}')
+    print("Wait a moment, syncing guilds...")
     view = MyView()
     client.add_view(view)
     client.loop.create_task(sync_guilds())
@@ -232,7 +300,7 @@ async def sync(interaction: discord.Interaction):
             await interaction.response.defer(ephemeral=True)  
             
             result = subprocess.run(
-                ['git', '-C', '/home/skylier/Documents/Codes', 'pull', 'origin', 'main'],
+                ['git', '-C', '/home/skylier/Documents/bot', 'pull', 'origin', 'main'],
                 capture_output=True,
                 text=True
             )
@@ -290,6 +358,8 @@ async def sync_guilds():
 
         await guild_channel.send(embed=guild_embed)
         print("Guilds synced")
+        print("Bot is ready.")
+
         await asyncio.sleep(43200)
         
 
@@ -372,12 +442,6 @@ async def carrier_embed(interaction):
 Here are the requirements to be a Delerious Carrier:
 
 **Dungeon Carrier Bypass Requirements:**
-
-Floor 6 Carrier --> Cata 35
-
-Floor 5 Carrier --> Cata 30
-
-Floor 4 Carrier --> Cata 27
 
 Floor 3 Carrier --> Cata 24
 
@@ -477,13 +541,13 @@ async def apply_dungeon(interaction, floor: int, evidence: discord.Attachment=No
         await interaction.followup.send(f"You're already a floor {floor} carrier.", ephemeral=True)
         return
 
-    bypass, xp=check_reqs_dungeon(username, floor)
+    bypass, level=check_reqs_dungeon(username, floor)
 
     if bypass:
         role = get(interaction.guild.roles, name=f"F{floor} Carrier")
 
         embed = discord.Embed(title=f"Auto Accepted: {username}'s floor {floor} application ({interaction.user})")
-        embed.add_field(name="Cata XP", value=xp, inline=False)
+        embed.add_field(name="Cata Level", value=level, inline=False)
 
         embed.set_author(name=interaction.user.name, icon_url=interaction.user.display_avatar.url)
         embed.timestamp = interaction.created_at
@@ -511,7 +575,7 @@ async def apply_dungeon(interaction, floor: int, evidence: discord.Attachment=No
     elif evidence != None:
 
 
-        embed = discord.Embed(title=f"{username}'s floor {floor} application", description=f"Cata XP: {xp}")
+        embed = discord.Embed(title=f"{username}'s floor {floor} application", description=f"Cata Level: {level}")
         embed.set_author(name=interaction.user.name, icon_url=interaction.user.display_avatar.url)
         embed.timestamp = interaction.created_at
 
@@ -531,6 +595,60 @@ async def apply_dungeon(interaction, floor: int, evidence: discord.Attachment=No
         await interaction.followup.send(f"You do not meet the bypass requirements for this dungeon slayer. Please submit a screenshot of a completion run as evidence.", ephemeral=True)
     
 
+async def apply_master(interaction, floor: int, evidence: discord.Attachment=None):
+    if floor <= 0 or floor>3:
+        await interaction.response.send_message(f"We only accept mastermode floor 1-3 applications right now!", ephemeral=True)
+        return
+    user_roles = [role.name for role in interaction.user.roles]
+    if any(role=="Application Blacklisted" for role in user_roles):
+        await interaction.response.send_message("You're application blacklisted. If you'd wish to appeal open a support ticket.", ephemeral=True)
+        return
+    await interaction.response.defer(ephemeral=True)
+
+    
+    carrier_log=interaction.guild.get_channel(1298550693870829579) 
+
+    if check_scammer_id(interaction.user.id):
+        await interaction.followup.send("You're found in SBZ scammer database. If you'd wish to appeal please contact SBZ staff.", ephemeral=True)
+        embed = discord.Embed(title=f"Auto Declined: {username}'s floor {floor} application ({interaction.user})")
+        embed.add_field(name="Scammer identified", value="Using SBZ Scammer Database/discord.gg/sbz", inline=False)
+
+        embed.set_author(name=interaction.user.name, icon_url=interaction.user.display_avatar.url)
+        embed.timestamp = interaction.created_at
+        embed.color=discord.Color.red() 
+        await carrier_log.send(embed=embed)
+        return
+
+    id = interaction.user.id
+    verified_user = users_collection.find_one({'id':id})
+    if not verified_user:
+        await interaction.followup.send("It appears that you're not verified yet. Please verify using the `/verify` command before applying!", ephemeral=True)
+        return
+    username = verified_user['username']
+    level = get_level(username)
+
+
+    if any(role==f"M{floor} Carrier" for role in user_roles):
+        await interaction.followup.send(f"You're already a M{floor} carrier.", ephemeral=True)
+        return
+
+    embed = discord.Embed(title=f"{username}'s **MASTERMODE** floor {floor} application", description=f"Cata Level: {level}")
+    embed.set_author(name=interaction.user.name, icon_url=interaction.user.display_avatar.url)
+    embed.timestamp = interaction.created_at
+
+    # embed.add_field(name="Status", value="Pending", inline=False)
+    evidence_url = evidence.url
+
+    embed.set_footer(text="Not scammer in SBZ database")
+
+    embed.set_image(url=evidence_url)
+
+    view = ReviewView_M(embed_user=interaction.user, floor=floor)
+    await carrier_log.send(embed=embed, view=view)
+    await carrier_log.send("<@&732620946350800896> please review this application")
+
+    await interaction.followup.send(f"Your application for Mastermode floor {floor} carrier has been sent to our moderation team. It will be reviewed within 24 hours!", ephemeral=True)
+
 
 @client.tree.command(
     name="apply_dungeon_carrier",
@@ -541,6 +659,14 @@ async def apply_dungeon(interaction, floor: int, evidence: discord.Attachment=No
 async def apply_dungeon_carrier(interaction, floor: int, evidence: discord.Attachment=None):
     await apply_dungeon(interaction, floor, evidence)
 
+@client.tree.command(
+    name="apply_mastermode_carrier",
+    description="Apply to be a Delerious mastermode dungeon carrier",
+    guild=discord.Object(id=732620946300600331)
+)
+@app_commands.describe(floor="Integer; e.g. 5", evidence="The screenshot of completion of the floor you are applying to")
+async def apply_mastermode_carrier(interaction, floor: int, evidence: discord.Attachment):
+    await apply_master(interaction, floor, evidence)
 
 
 @client.tree.command(
