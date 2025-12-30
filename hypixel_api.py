@@ -57,7 +57,7 @@ def check_reqs_slayer(player_name, slayer_type: str):
     elif slayer_type.lower() == "voidgloom":
         slayer_type = "enderman"
     xp = get_slayer_xp(player_name, slayer_type)
-    if xp >= 20000:
+    if xp >= 100000:
         return True, humanize_xp(xp)
     else:
         return False, humanize_xp(xp)
