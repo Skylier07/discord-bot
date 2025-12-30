@@ -3,7 +3,8 @@ import json
 from verification import *
 from keys import API_KEY
 api_url = "https://api.hypixel.net/v2/resources/skyblock/"
-floorReqs = [24, 24, 24, 28, 30, 38] # Need to change into xp
+floorReqs = [24, 24, 24, 28, 30, 38] #Floor requirements, change as see fit
+slayerReqs = [8, 7, 7, 7] #Slayer requirements, change as see fit
 
 def get_player_profiles(player_name=None, uuid=None):
     url = f"https://api.hypixel.net/v2/skyblock/profiles?key={API_KEY}"
@@ -47,6 +48,14 @@ def get_slayer_xp(player_name, slayer):
     return max(xps)
 
 def check_reqs_slayer(player_name, slayer_type: str):
+    if slayer_type.lower() == "revenant":
+        slayer_type = "zombie"
+    elif slayer_type.lower() == "tarantula":
+        slayer_type = "spider"
+    elif slayer_type.lower() == "sven":
+        slayer_type = "wolf"
+    elif slayer_type.lower() == "voidgloom":
+        slayer_type = "enderman"
     xp = get_slayer_xp(player_name, slayer_type)
     if xp >= 20000:
         return True, humanize_xp(xp)

@@ -168,6 +168,73 @@ class ReviewView_M(View):
         await self.embed_user.add_roles(role) 
         await interaction.response.send_message(f"{self.embed_user.mention}'s application rejected and blacklisted by {interaction.user.mention}", ephemeral=False)
 
+class ReviewView_S(View):
+    def __init__(self, embed_user:discord.user, slayer:str):
+        super().__init__(timeout=None)
+        self.embed_user = embed_user
+        self.slayer=slayer
+
+    @discord.ui.button(label="Accept", style=discord.ButtonStyle.success, custom_id="acceptBtn")
+    async def approve(self, interaction: discord.Interaction, button: discord.ui.Button):
+        embed = interaction.message.embeds[0]  
+        embed.color = discord.Color.green() 
+
+        role = get(self.embed_user.guild.roles, name=f"{self.slayer} Carrier")
+        user = self.embed_user
+        user_roles = [role.name for role in user.roles]
+
+        if not any(role=="Carry Team" for role in user_roles):
+            carry_team = get(interaction.guild.roles, name=f"Carry Team")
+            await user.add_roles(carry_team) 
+        try: 
+            dm_embed = discord.Embed(title=f"Your {self.slayer} slayer carrier application has been accepted", description="Thank you for joining our carrier program. You will be pinged when a carry service that you provide is requested!")
+            dm_embed.add_field(name="Rules", value="<#990437238926110730>")
+            dm_embed.add_field(name="Accepted By", value=f"{interaction.user.mention}", inline=False)
+
+            dm_embed.set_author(name=interaction.user.name, icon_url=interaction.user.display_avatar.url)
+            dm_embed.timestamp = interaction.created_at
+            dm_embed.color=discord.Color.green() 
+            await user.send(embed=dm_embed)
+            await interaction.message.edit(embed=embed)
+            await self.embed_user.add_roles(role) 
+            await interaction.response.send_message(f"{self.embed_user.mention}'s application accepted by {interaction.user.mention}", ephemeral=False)
+        except Exception:
+            carrier_chat=interaction.guild.get_channel(990438688561463297) 
+            await interaction.message.edit(embed=embed)
+            await self.embed_user.add_roles(role) 
+            await interaction.response.send_message(f"{self.embed_user.mention}'s application accepted by {interaction.user.mention}", ephemeral=False)
+            await carrier_chat.send(embed=dm_embed)
+
+            pass
+
+
+    @discord.ui.button(label="Reject", style=discord.ButtonStyle.danger, custom_id="rejectBtn")
+    async def reject(self, interaction: discord.Interaction, button: discord.ui.Button):
+        embed = interaction.message.embeds[0]  
+        embed.color = discord.Color.red() 
+        user = self.embed_user
+        try:
+            await user.send(f"Your {self.slayer} slayer carrier application has been declined. If you have any questions regarding this decision, feel free to make a support ticket.")
+        except Exception as e:
+            pass
+        await interaction.message.edit(embed=embed) 
+        await interaction.response.send_message(f"{self.embed_user.mention}'s application rejected by {interaction.user.mention}", ephemeral=False)
+    @discord.ui.button(label="Blacklist", style=discord.ButtonStyle.gray, custom_id="blacklistBtn")
+    async def blacklist(self, interaction: discord.Interaction, button: discord.ui.Button):
+        embed = interaction.message.embeds[0]  
+        embed.color = discord.Color.red() 
+        embed.title = f"Rejected and blacklisted {self.embed_user.display_name}"
+        user = self.embed_user
+        role = get(self.embed_user.guild.roles, name="Application Blacklisted")
+        user = self.embed_user
+        try:
+            await user.send(f"Your {self.slayer} slayer carrier application has been rejected and you're now application blacklisted. If you have any questions regarding this decision, feel free to make a support ticket.")
+        except Exception as e:
+            pass
+        await interaction.message.edit(embed=embed) 
+        await self.embed_user.add_roles(role) 
+        await interaction.response.send_message(f"{self.embed_user.mention}'s application rejected and blacklisted by {interaction.user.mention}", ephemeral=False)
+
 
 
 class GuildView(View):
@@ -674,15 +741,16 @@ async def apply_mastermode_carrier(interaction, floor: int, evidence: discord.At
     description="Apply to be a Delerious slayer carrier",
     guild=discord.Object(id=732620946300600331)
 )
-@app_commands.describe(slayer="The slayer you're applying for")
+@app_commands.describe(slayer="The slayer you're applying for", evidence="The screenshot of completion of the slayer you are applying to")
 @app_commands.choices(
     slayer = [
-        Choice(name = "Revenant Horror", value = "zombie"),
-        Choice(name = "Tarantula Broodfather", value = "spider"),
-        Choice(name = "Sven Packmaster", value = "wolf"),
+        Choice(name = "Revenant Horror", value = "Revenant"),
+        Choice(name = "Tarantula Broodfather", value = "Tarantula"),
+        Choice(name = "Sven Packmaster", value = "Sven"),
+        Choice(name = "Voidgloom Seraph", value = "Voidgloom"),
     ]
 )
-async def apply_slayer_carrier(interaction, slayer: Choice[str]):
+async def apply_slayer_carrier(interaction, slayer: Choice[str], evidence: discord.Attachment=None):
     user_roles = [role.name for role in interaction.user.roles]
     if any(role=="Application Blacklisted" for role in user_roles):
         await interaction.response.send_message("You're application blacklisted. If you'd wish to appeal open a support ticket.")
@@ -710,47 +778,73 @@ async def apply_slayer_carrier(interaction, slayer: Choice[str]):
     username = verified_user['username']
     role_name = ""
 
-
-    if slayer_choice=="zombie":
+    can_bypass = False
+    if slayer_choice=="Revenant":
         role_name = "Revenant Carrier"
-    elif slayer_choice=="spider":
+    elif slayer_choice=="Tarantula":
         role_name= "Tarantula Carrier"
-    else: 
+    elif slayer_choice=="Sven":
         role_name="Sven Carrier"
+        can_bypass = True
+    elif slayer_choice=="Voidgloom":
+        role_name="Voidgloom Carrier"
     if any(role==role_name for role in user_roles):
         await interaction.followup.send(f"You're already a {slayer_choice} carrier.")
         return
 
 
-    bypass, xp=check_reqs_slayer(username, slayer_choice)
-    if bypass:
+    meet_req, xp=check_reqs_slayer(username, slayer_choice)
+    if meet_req:
+        if can_bypass:
+            role = get(interaction.guild.roles, name=role_name)
+            
+            embed = discord.Embed(title=f"Auto Accepted: {username}'s {role_name} application ({interaction.user})")
+            embed.add_field(name="Slayer XP", value=xp, inline=False)
+            embed.set_footer(text="Not scammer in SBZ database")
 
-        role = get(interaction.guild.roles, name=role_name)
-        
-        embed = discord.Embed(title=f"Auto Accepted: {username}'s {role_name} application ({interaction.user})")
-        embed.add_field(name="Slayer XP", value=xp, inline=False)
-        embed.set_footer(text="Not scammer in SBZ database")
+            embed.set_author(name=interaction.user.name, icon_url=interaction.user.display_avatar.url)
+            embed.timestamp = interaction.created_at
+            embed.color=discord.Color.green() 
+            if not any(role=="Carry Team" for role in user_roles):
+                carry_team = get(interaction.guild.roles, name=f"Carry Team")
+                await interaction.user.add_roles(carry_team) 
+            await interaction.user.add_roles(role) 
+            dm_embed = discord.Embed(title=f"Your slayer carrier application has been accepted", description="Thank you for joining our carrier program. You will be pinged when a carry service that you provide is requested!")
+            dm_embed.add_field(name="Rules", value="<#990437238926110730>")
+            dm_embed.add_field(name="Accepted By", value=f"Automatic", inline=False)
 
-        embed.set_author(name=interaction.user.name, icon_url=interaction.user.display_avatar.url)
-        embed.timestamp = interaction.created_at
-        embed.color=discord.Color.green() 
-        if not any(role=="Carry Team" for role in user_roles):
-            carry_team = get(interaction.guild.roles, name=f"Carry Team")
-            await interaction.user.add_roles(carry_team) 
-        await interaction.user.add_roles(role) 
-        dm_embed = discord.Embed(title=f"Your slayer carrier application has been accepted", description="Thank you for joining our carrier program. You will be pinged when a carry service that you provide is requested!")
-        dm_embed.add_field(name="Rules", value="<#990437238926110730>")
-        dm_embed.add_field(name="Accepted By", value=f"Automatic", inline=False)
+            dm_embed.set_author(name=interaction.user.name, icon_url=interaction.user.display_avatar.url)
+            dm_embed.timestamp = interaction.created_at
+            dm_embed.color=discord.Color.green() 
+            try: 
+                await interaction.user.send(embed=dm_embed) 
+            except Exception:
+                pass
+            await interaction.followup.send(f"Your application is automatically accepted!", ephemeral=True)
+            await carrier_log.send(embed=embed)
+        else:
+            if evidence == None:
+                await interaction.followup.send(f"You meet the requirements for {slayer_choice} slayer carrier, but since this slayer doesn't have a bypass, please submit a screenshot of a slayer completion run as evidence.", ephemeral=True)
+                return
+            else:
+                embed = discord.Embed(title=f"{username}'s {slayer_choice} carrier application", description=f"Slayer XP: {xp}")
+                embed.set_author(name=interaction.user.name, icon_url=interaction.user.display_avatar.url)
+                embed.timestamp = interaction.created_at
 
-        dm_embed.set_author(name=interaction.user.name, icon_url=interaction.user.display_avatar.url)
-        dm_embed.timestamp = interaction.created_at
-        dm_embed.color=discord.Color.green() 
-        try: 
-            await interaction.user.send(embed=dm_embed) 
-        except Exception:
-            pass
-        await interaction.followup.send(f"Your application is automatically accepted!", ephemeral=True)
-        await carrier_log.send(embed=embed)
+                # embed.add_field(name="Status", value="Pending", inline=False)
+                evidence_url = evidence.url
+
+                embed.set_footer(text="Not scammer in SBZ database")
+
+                embed.set_image(url=evidence_url)
+
+                view = ReviewView_S(embed_user=interaction.user, slayer=slayer_choice)
+                await carrier_log.send(embed=embed, view=view)
+                await carrier_log.send("<@&732620946350800896> please review this application")
+
+                await interaction.followup.send(f"Your application for {slayer_choice} slayer carrier has been sent to our moderation team. It will be reviewed within 24 hours!", ephemeral=True)
+
+
     else:
         await interaction.followup.send(f"Your slayer carrier application has been declined as you don't meet the requirements!")
 
