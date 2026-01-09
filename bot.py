@@ -421,10 +421,14 @@ async def sync_guilds():
         guild_embed.color=discord.Color.green()
 
         left = await refresh_guild_roles(members, guild_members)
-        while left == False:
+        retries = 0
+        while left == False and retries < 3:
             left = await refresh_guild_roles(members, guild_members)
-
-        guild_embed.add_field(name="Removed members: ", value=left)
+            retries += 1
+        if retries == 3 and left == False:
+            guild_embed.add_field(name="Error", value="<@702473604616421476>! Failed to refresh guild roles after 3 attempts.")
+        else:
+            guild_embed.add_field(name="Removed members: ", value=left)
 
         await guild_channel.send(embed=guild_embed)
         print("Guilds synced")
