@@ -421,6 +421,9 @@ async def sync_guilds():
         guild_embed.color=discord.Color.green()
 
         left = await refresh_guild_roles(members, guild_members)
+        while left == False:
+            left = await refresh_guild_roles(members, guild_members)
+
         guild_embed.add_field(name="Removed members: ", value=left)
 
         await guild_channel.send(embed=guild_embed)
@@ -455,8 +458,10 @@ async def refresh_guild_roles(members, guild_members):
             user.add_roles(member_role)
         except AttributeError:
             pass
-
-    return "N/A"
+    if i==0:
+        return "N/A"
+    else:
+        return str(i) + " members removed"
 
     
 @client.tree.command(

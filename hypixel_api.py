@@ -134,6 +134,8 @@ def get_guild_members(guild_name):
         print("Timeout Error:", errt)
     except requests.exceptions.RequestException as err:
         print("Oops: Something went wrong", err)
+    finally: 
+        return False
 
 CATACOMBS_XP = {
     15: 25340,
