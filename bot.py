@@ -876,7 +876,7 @@ async def apply_guild(interaction, guild: Choice[str]):
         await interaction.response.send_message("It appears that you're not verified yet. Please verify using the `/verify` command before applying!", ephemeral=True)
         return
     await interaction.response.defer(ephemeral=True)
-    guild_log=interaction.guild.get_channel(1374415191378235606) 
+    guild_log=interaction.guild.get_channel(1376121292108861450) 
     
     if check_scammer_id(interaction.user.id):
         await interaction.followup.send("You are found as a scammer in the SkyBlockZ database, this check was provided by discord.gg/skyblock", ephemeral=True)
@@ -926,7 +926,7 @@ async def apply_guild(interaction, guild: Choice[str]):
         view = GuildView(embed_user=interaction.user, ign="")
 
         await guild_log.send(f"<@&1376123270583160913> Please invite new member ASAP! ```/g invite {username}```",embed=embed, view=view)
-    elif guild_choice == "sky" and level >=200: 
+    elif guild_choice == "sky" and level >=200 and False:  # Future update
         role_name = "Sky Guild" # NEED TO BE CHANGED
         role = get(interaction.guild.roles, name=role_name)
         
