@@ -859,7 +859,7 @@ async def apply_slayer_carrier(interaction, slayer: Choice[str], evidence: disco
 @app_commands.describe(guild="The guild you're applying for")
 @app_commands.choices(
     guild = [
-        # Choice(name = "guild1", value = "high"),
+        Choice(name = "Skys Guild", value = "sky"),
         Choice(name = "Spruce", value = "spruce"),
 
     ]
@@ -876,7 +876,7 @@ async def apply_guild(interaction, guild: Choice[str]):
         await interaction.response.send_message("It appears that you're not verified yet. Please verify using the `/verify` command before applying!", ephemeral=True)
         return
     await interaction.response.defer(ephemeral=True)
-    guild_log=interaction.guild.get_channel(1376121292108861450) 
+    guild_log=interaction.guild.get_channel(1374415191378235606) 
     
     if check_scammer_id(interaction.user.id):
         await interaction.followup.send("You are found as a scammer in the SkyBlockZ database, this check was provided by discord.gg/skyblock", ephemeral=True)
@@ -897,6 +897,37 @@ async def apply_guild(interaction, guild: Choice[str]):
     level = get_skyblock_level(username)
     if guild_choice == "spruce":
         role_name = "Spruce Guild"
+        role = get(interaction.guild.roles, name=role_name)
+        
+        embed = discord.Embed(title=f"New Applicant {username}'s {role_name} application ({interaction.user})")
+        embed.add_field(name="Skyblock Level", value=level, inline=False)
+        embed.set_footer(text="Not scammer in SBZ database")
+
+        embed.set_author(name=interaction.user.name, icon_url=interaction.user.display_avatar.url)
+        embed.timestamp = interaction.created_at
+
+        await interaction.user.add_roles(member_role) 
+        await interaction.user.add_roles(role) 
+
+        dm_embed = discord.Embed(title=f"Your guild application has been accepted", description="Thank you for joining a Delerious guild! Welcome to the family! \n An invitation will be send by one of our staff within the next 24 hours!")
+        dm_embed.add_field(name="Guild Announcements", value="<#979237342541934652>")
+        dm_embed.add_field(name="Guild Giveaways", value="<#979728051321577492>", inline=False)
+
+        dm_embed.add_field(name="Approved By", value=f"Automatic", inline=False)
+
+        dm_embed.set_author(name=interaction.user.name, icon_url=interaction.user.display_avatar.url)
+        dm_embed.timestamp = interaction.created_at
+        dm_embed.color=discord.Color.green() 
+        try: 
+            await interaction.user.send(embed=dm_embed) 
+        except Exception:
+            pass
+        await interaction.followup.send(f"Your application is automatically accepted!", ephemeral=True)
+        view = GuildView(embed_user=interaction.user, ign="")
+
+        await guild_log.send(f"<@&1376123270583160913> Please invite new member ASAP! ```/g invite {username}```",embed=embed, view=view)
+    elif guild_choice == "sky" and level >=200: 
+        role_name = "Sky Guild" # NEED TO BE CHANGED
         role = get(interaction.guild.roles, name=role_name)
         
         embed = discord.Embed(title=f"New Applicant {username}'s {role_name} application ({interaction.user})")
