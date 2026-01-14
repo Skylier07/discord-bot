@@ -385,7 +385,7 @@ async def sync(interaction: discord.Interaction):
     description="Restart the bot",
     guild=discord.Object(id=732620946300600331)
 )
-async def sync(interaction: discord.Interaction):
+async def restart(interaction: discord.Interaction):
     user_roles = [role.name for role in interaction.user.roles] if isinstance(interaction.user, discord.Member) else []
     
     if any(role == "Owner" for role in user_roles):
@@ -400,6 +400,7 @@ async def sync(interaction: discord.Interaction):
 
     else:
         await interaction.response.send_message(".-. Go away please", ephemeral=True)
+
 
 
 async def sync_guilds():
@@ -543,6 +544,32 @@ Floor 1 Carrier --> Cata 19
         await interaction.response.send_message("You are not Sky lil bro")
     
 
+
+
+@client.tree.command(
+    name="info",
+    description="Information about a user",
+    guild=discord.Object(id=732620946300600331)
+)
+@app_commands.describe(user="User")
+async def info(interaction, user: discord.User):
+    await interaction.response.defer(ephemeral=True)
+    discord_id = user.id
+    uuid = get_uuid_with_discord(discord_id)
+    scammer = check_scammer_id(discord_id)
+    ign = users_collection.find_one({"id": discord_id})['username']
+    cata_level = get_level(ign)
+    sb_level = get_skyblock_level(ign)
+    embed = discord.Embed(title=f"Information for {user.name}", description=f"IGN: {ign}")
+    embed.add_field(name="UUID", value=uuid, inline=False)
+    embed.add_field(name="Cata Level", value=cata_level, inline=False)
+    embed.add_field(name="Skyblock Level", value=sb_level, inline=False)
+    embed.add_field(name="Scammer Status", value="Scammer" if scammer else "Not a Scammer", inline=False)
+    if scammer:
+        embed.color=discord.Color.red()
+    else:
+        embed.color=discord.Color.blue()
+    await interaction.followup.send(embed=embed, ephemeral=True)
 
 
 @client.tree.command(

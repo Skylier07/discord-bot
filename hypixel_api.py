@@ -135,7 +135,10 @@ def get_guild_members(guild_name):
     except requests.exceptions.RequestException as err:
         print("Oops: Something went wrong", err)
     finally: 
-        return False
+        if(len(guild_members)>0):
+            return guild_members
+        else:
+            return False
 
 CATACOMBS_XP = {
     15: 25340,
