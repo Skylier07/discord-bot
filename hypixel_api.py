@@ -44,8 +44,8 @@ def get_slayer_xp(player_name, slayer):
         except Exception as e:
             # print(f"Error:{e}")
             pass
-    
-    return max(xps)
+
+    return max(xps) if xps else 0
 
 def check_reqs_slayer(player_name, slayer_type: str):
     if slayer_type.lower() == "revenant":
@@ -77,9 +77,10 @@ def get_cata_xp(player_name):
             except Exception as e:
                 pass
 
-        return max(xps)
+        return max(xps) if xps else 0
     except Exception as e:
         print("API Key Expired")
+        return 0
 
 def humanize_xp(xp: int) -> str:
     if xp >= 1_000_000:
@@ -113,10 +114,11 @@ def get_skyblock_level(player_name):
         except Exception as e:
             continue
     
-    return max(xps)//100
+    return max(xps)//100 if xps else 0
 
 def get_guild_members(guild_name):
     url = f'https://api.hypixel.net/v2/guild?key={API_KEY}&name={guild_name}'
+    guild_members = []
     try:
         response = requests.get(url)
 
@@ -125,7 +127,6 @@ def get_guild_members(guild_name):
         guild_members = []
         for member in members:
             guild_members.append(member['uuid'])
-        return guild_members
     except requests.exceptions.HTTPError as errh:
         print("HTTP Error:", errh)
     except requests.exceptions.ConnectionError as errc:
@@ -134,11 +135,7 @@ def get_guild_members(guild_name):
         print("Timeout Error:", errt)
     except requests.exceptions.RequestException as err:
         print("Oops: Something went wrong", err)
-    finally: 
-        if(len(guild_members)>0):
-            return guild_members
-        else:
-            return False
+    return guild_members if guild_members else False
 
 CATACOMBS_XP = {
     15: 25340,

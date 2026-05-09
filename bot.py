@@ -302,7 +302,7 @@ class GuildView(View):
 
 
 
-class MyView(discord.ui.View):
+class DungeonCarrierView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)  
 
@@ -325,7 +325,7 @@ class MyView(discord.ui.View):
     # async def f6_button(self, interaction: discord.Interaction, button: discord.ui.Button):
     #     await apply_dungeon(interaction, 6)
 
-class MyView(discord.ui.View):
+class GuildApplicationView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)  
 
@@ -344,8 +344,8 @@ async def on_ready():
     await client.tree.sync(guild=discord.Object(id=732620946300600331))
     print(f'Logged in as {client.user}')
     print("Wait a moment, syncing guilds...")
-    view = MyView()
-    client.add_view(view)
+    client.add_view(DungeonCarrierView())
+    client.add_view(GuildApplicationView())
     client.loop.create_task(sync_guilds())
 
 
@@ -418,6 +418,14 @@ async def sync_guilds():
         members = role.members
 
         guild_members = await loop.run_in_executor(None, get_guild_members, "Spruce")
+        if guild_members is False:
+            guild_embed = discord.Embed(title="Daily guild stats refresh failed")
+            guild_embed.add_field(name="Error", value="<@702473604616421476>! Failed to fetch guild members.")
+            guild_embed.color=discord.Color.red()
+            await guild_channel.send(embed=guild_embed)
+            await asyncio.sleep(43200)
+            continue
+
         guild_embed = discord.Embed(title=f"Daily guild stats refreshed", description=f"Total members: {len(guild_members)}")
         guild_embed.color=discord.Color.green()
 
@@ -458,9 +466,11 @@ async def refresh_guild_roles(members, guild_members):
     for uuid in guild_members:
         try:
             discord_id=get_discord_with_uuid(uuid)
-            user = client.get_user(discord_id)
-            user.add_roles(role)
-            user.add_roles(member_role)
+            member = guild.get_member(discord_id)
+            if member is None:
+                continue
+            await member.add_roles(role)
+            await member.add_roles(member_role)
         except AttributeError:
             pass
     if i==0:
@@ -500,7 +510,7 @@ Inactivity Prune: 7 Days+ Offline
     user_roles = [role.name for role in interaction.user.roles]
     if any(role=="Owner" for role in user_roles):
         channel = interaction.guild.get_channel(990437238926110730)  
-        await channel.send(embed=app_embed, view=MyView())
+        await channel.send(embed=app_embed, view=GuildApplicationView())
         await interaction.response.send_message("Success!", ephemeral=True)
     else:
         await interaction.response.send_message("You are not Sky lil bro")
@@ -538,7 +548,7 @@ Floor 1 Carrier --> Cata 19
     user_roles = [role.name for role in interaction.user.roles]
     if any(role=="Owner" for role in user_roles):
         channel = interaction.guild.get_channel(990437238926110730)  
-        await channel.send(embed=app_embed, view=MyView())
+        await channel.send(embed=app_embed, view=DungeonCarrierView())
         await interaction.response.send_message("Success!", ephemeral=True)
     else:
         await interaction.response.send_message("You are not Sky lil bro")
@@ -621,6 +631,13 @@ async def apply_dungeon(interaction, floor: int, evidence: discord.Attachment=No
     
     carrier_log=interaction.guild.get_channel(1298550693870829579) 
 
+    id = interaction.user.id
+    verified_user = users_collection.find_one({'id':id})
+    if not verified_user:
+        await interaction.followup.send("It appears that you're not verified yet. Please verify using the `/verify` command before applying!", ephemeral=True)
+        return
+    username = verified_user['username']
+
     if check_scammer_id(interaction.user.id):
         await interaction.followup.send("You're found in SBZ scammer database. If you'd wish to appeal please contact SBZ staff.", ephemeral=True)
         embed = discord.Embed(title=f"Auto Declined: {username}'s floor {floor} application ({interaction.user})")
@@ -631,13 +648,6 @@ async def apply_dungeon(interaction, floor: int, evidence: discord.Attachment=No
         embed.color=discord.Color.red() 
         await carrier_log.send(embed=embed)
         return
-
-    id = interaction.user.id
-    verified_user = users_collection.find_one({'id':id})
-    if not verified_user:
-        await interaction.followup.send("It appears that you're not verified yet. Please verify using the `/verify` command before applying!", ephemeral=True)
-        return
-    username = verified_user['username']
 
 
     if any(role==f"F{floor} Carrier" for role in user_roles):
@@ -711,6 +721,14 @@ async def apply_master(interaction, floor: int, evidence: discord.Attachment=Non
     
     carrier_log=interaction.guild.get_channel(1298550693870829579) 
 
+    id = interaction.user.id
+    verified_user = users_collection.find_one({'id':id})
+    if not verified_user:
+        await interaction.followup.send("It appears that you're not verified yet. Please verify using the `/verify` command before applying!", ephemeral=True)
+        return
+    username = verified_user['username']
+    level = get_level(username)
+
     if check_scammer_id(interaction.user.id):
         await interaction.followup.send("You're found in SBZ scammer database. If you'd wish to appeal please contact SBZ staff.", ephemeral=True)
         embed = discord.Embed(title=f"Auto Declined: {username}'s floor {floor} application ({interaction.user})")
@@ -721,14 +739,6 @@ async def apply_master(interaction, floor: int, evidence: discord.Attachment=Non
         embed.color=discord.Color.red() 
         await carrier_log.send(embed=embed)
         return
-
-    id = interaction.user.id
-    verified_user = users_collection.find_one({'id':id})
-    if not verified_user:
-        await interaction.followup.send("It appears that you're not verified yet. Please verify using the `/verify` command before applying!", ephemeral=True)
-        return
-    username = verified_user['username']
-    level = get_level(username)
 
 
     if any(role==f"M{floor} Carrier" for role in user_roles):
@@ -798,6 +808,8 @@ async def apply_slayer_carrier(interaction, slayer: Choice[str], evidence: disco
         await interaction.response.send_message("It appears that you're not verified yet. Please verify using the `/verify` command before applying!", ephemeral=True)
         return
     await interaction.response.defer(ephemeral=True)
+    carrier_log=interaction.guild.get_channel(1298550693870829579)
+    username = verified_user['username']
     
     if check_scammer_id(interaction.user.id):
         await interaction.followup.send("You are found as a scammer in the SkyBlockZ database, this check was provided by discord.gg/skyblock", ephemeral=True)
@@ -810,8 +822,6 @@ async def apply_slayer_carrier(interaction, slayer: Choice[str], evidence: disco
         await carrier_log.send(embed=embed)
         return
 
-    carrier_log=interaction.guild.get_channel(1298550693870829579) 
-    username = verified_user['username']
     role_name = ""
 
     can_bypass = False
@@ -905,7 +915,7 @@ async def apply_guild(interaction, guild: Choice[str]):
     if any(role=="Application Blacklisted" for role in user_roles):
         await interaction.response.send_message("You're application blacklisted. If you'd wish to appeal open a support ticket.")
         return
-    guild_choice=guild.value 
+    guild_choice = guild.value if hasattr(guild, "value") else guild
     id = interaction.user.id
     verified_user = users_collection.find_one({'id':id})
     if not verified_user:
@@ -913,6 +923,7 @@ async def apply_guild(interaction, guild: Choice[str]):
         return
     await interaction.response.defer(ephemeral=True)
     guild_log=interaction.guild.get_channel(1376121292108861450) 
+    username = verified_user['username']
     
     if check_scammer_id(interaction.user.id):
         await interaction.followup.send("You are found as a scammer in the SkyBlockZ database, this check was provided by discord.gg/skyblock", ephemeral=True)
@@ -926,7 +937,6 @@ async def apply_guild(interaction, guild: Choice[str]):
         await guild_log.send(embed=embed)
         return
 
-    username = verified_user['username']
     role_name = ""
     member_role = get(interaction.guild.roles, name="Guild Member")
 

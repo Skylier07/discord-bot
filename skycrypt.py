@@ -5,7 +5,7 @@ floorReqs = [19, 21, 24, 27, 30, 35]
 
 
 def get_player_profile(player_name, feature, profile=None):
-    api_url = "https://sky.shiiyu.moe/api/v2"
+    api_url = "https://sky.shiiiyu.moe/api/v2"
     if profile:
         endpoint = f"/{feature}/{player_name}/{profile}"
     else:
@@ -96,4 +96,3 @@ def check_reqs_slayer(player_name, slayer_type: str):
 
 if __name__ == "__main__":
     print(check_reqs_slayer("Skyzei_", "zombie"))
-    
